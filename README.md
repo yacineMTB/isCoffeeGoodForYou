@@ -1,6 +1,6 @@
 # isCoffeeGoodForYou
 
-A pet project of mine. Started out as an honors project. A collection of tools to analyze how much pornography gets posted on 4chan.
+A pet project of mine. Started out as an honors project. A collection of tools to analyze how much pornography gets posted on 4chan. More specifically, a script that streams 4chan image posts to a image classifier, and an API to serve up that information.
 
 ## What is 4chan?
 A terrible website where terrible people congregate. It's an anonymous forum, which has gained some notoriety over time. In very rare moments, there can be insightful discussion on its hobby boards. Maybe if we find out a way to filter out 98% of the posts some good can come out of it. 
