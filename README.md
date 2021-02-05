@@ -41,7 +41,7 @@ I spent little time making this portable. Maybe I'll do it some other time. Howe
 
 - Install redis and run it. On my machine I was running redis through systemd.
 - `npm i` in the respective directories
-- Start up the worker (`node ./index.js`)
+- Start up the worker (`node ./index.js`) (tested on arch linux with an AMD64 cpu)
 - Start up the API (`npm run start`)
 - Start the dashboard (no point really tbh) (`npm run start`)
 - To use the chrome extension; check out this link https://developer.chrome.com/docs/extensions/mv2/getstarted/ 
