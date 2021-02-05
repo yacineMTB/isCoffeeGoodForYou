@@ -6,7 +6,7 @@ const {batchPromises} = require('./lib/util');
 
 const redisClient = new Redis();
 
-const BOARDS = ['fit', 'g', 'sci', 's'];
+const BOARDS = ['fit', 'g', 'sci'];
 
 /**
  * Takes an array of images, classifies them, and saves the result to redis.
