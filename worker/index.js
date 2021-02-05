@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const Redis = require('ioredis');
-const {loadBoard, updateThreadMapAndGetNewImagePosts} = require('./lib/boardFunctional');
+const {loadBoard, updateThreadMapAndGetNewImagePosts} = require('./lib/board');
 const classify = require('./lib/classify');
 const {batchPromises} = require('./lib/util');
 

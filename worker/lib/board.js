@@ -1,96 +1,147 @@
-const {getAllThreads, getThreadByID, turnPostsIntoMap} = require('./4chan-api');
+const {getAllThreads, getThreadByID} = require('./4chan-api');
+const {batchPromises} = require('./util');
 
-class Board {
-  constructor(name) {
-    this.name = name;
-  }
+const turnPostsIntoMap = (posts) => posts
+    .reduce((acc, curr) => acc.set(curr.no, curr), new Map());
 
-  getImageUrl(post) {
-    return `https://i.4cdn.org/${this.name}/${post.tim}${post.ext}`;
-  }
+const getImageUrl = (post, boardName) => {
+  return `https://i.4cdn.org/${boardName}/${post.tim}${post.ext}`;
+};
 
-  async loadBoard() {
-    const threads = await getAllThreads(this.name);
-    this.threads = turnPostsIntoMap(threads);
+const getImagePosts = (posts, boardName) => {
+  const imagePosts = posts
+      .filter((post) => post.filename)
+      .map((post) => ({...post, img_url: getImageUrl(post, boardName)}));
+  return imagePosts;
+};
 
-    for (const [threadID, thread] of this.threads) {
-      const lambda = async () => {
-        try {
-          const loadedThread = await getThreadByID(this.name, threadID);
-          this.threads.set(threadID, {...thread, posts: turnPostsIntoMap(loadedThread.posts)});
-          console.log(`loading thread ${threadID}`);
-        } catch (err) {
-          if (err.response && err.response.statusCode === 404) {
-            console.log(`${threadID} 404ed`);
-            this.threads.delete(threadID);
-          } else {
-            console.log(err);
-            throw err;
-          }
-        }
-      };
-      await lambda();
-    }
+const loadBoard = async (boardName) => {
+  const threads = await getAllThreads(boardName);
+  const threadMap = turnPostsIntoMap(threads);
 
-    const imagePosts = [...this.threads].reduce((acc, [key, {posts}]) => {
-      if (posts) {
-        return [...acc, ...[...posts].filter(([key, post]) => post.filename).map(([key, post]) => post)];
+  const loadThreadAndPutOnThreadMap = async (boardName, threadID, thread, threadMap) => {
+    try {
+      console.log(`loading thread ${threadID}`);
+      const loadedThread = await getThreadByID(boardName, threadID);
+      threadMap.set(threadID, {...thread, posts: turnPostsIntoMap(loadedThread.posts)});
+    } catch (err) {
+      if (err.response && err.response.statusCode === 404) {
+        console.log(err);
+        console.log(`${threadID} 404ed`);
+        threadMap.delete(threadID);
+      } else {
+        console.error(err);
       }
-      return acc;
-    }, []);
-    return imagePosts.map((post) => ({...post, img_url: this.getImageUrl(post)}));
+    }
+  };
+  const functionArgumentsToBatch = [];
+  for (const [threadID, thread] of threadMap) {
+    functionArgumentsToBatch.push([boardName, threadID, thread, threadMap]);
   }
+  // The reason I'm batching these outbound requests is because hiroyuki likes to rate limit me when I'm running thiS
+  await batchPromises(functionArgumentsToBatch, loadThreadAndPutOnThreadMap, 8);
 
-  async update() {
-    let stream = [];
-    const currentThreads = await getAllThreads(this.name);
-    const currentThreadsMap = turnPostsIntoMap(currentThreads);
+  // Reduce the thread map to a list of posts
+  const allPosts = [...threadMap].reduce((accumulator, [key, {posts}]) => {
+    if (posts) {
+      return [
+        ...accumulator,
+        ...[...posts].map(([key, post]) => post)];
+    }
+    return accumulator;
+  }, []);
 
-    const threadsThatShouldUpdate = currentThreads
-        .filter((thread) => {
-          if (!this.threads.get(thread.no)) {
-            console.log(`New thread detected: ${thread.no}`);
-            return true;
-          }
-          return this.threads.get(thread.no).images < thread.images;
-        });
+  const imagePosts = getImagePosts(allPosts, boardName);
 
-    for (const threadThatShouldUpdate of threadsThatShouldUpdate) {
-      let newThread;
-      try {
-        newThread = await getThreadByID(this.name, threadThatShouldUpdate.no);
-        const newPosts = newThread.posts.filter((post) => {
-          const threadInMemory = this.threads.get(threadThatShouldUpdate.no);
-          if (!threadInMemory || !threadInMemory.posts) {
-            return true;
-          }
-          return !threadInMemory.posts.has(post.no);
-        });
+  return {
+    images: imagePosts.map((post) => ({...post, img_url: getImageUrl(post, boardName)})),
+    threadMap,
+  };
+};
 
-        this.threads.set(
-            threadThatShouldUpdate.no,
-            {...currentThreadsMap.get(threadThatShouldUpdate.no), posts: turnPostsIntoMap(newThread.posts)},
-        );
-        console.log(`new post count ${newPosts.length} for thread ${threadThatShouldUpdate.no}`);
-
-        stream = [...stream, ...newPosts];
-      } catch (err) {
-        if (err.response && err.response.statusCode === 404) {
-          console.log(`${threadThatShouldUpdate.no} 404ed`);
-          this.threads.delete(threadThatShouldUpdate.no);
-        } else {
-          throw err;
+/**
+ * Takes a map of threads, and a most recent list of threads, and returns
+ * threads with new posts with images
+ * @param {Map<string, Map>} threadMap
+ * @param {Object[]} currentThreads
+ * @return {Object[]} threads with new images
+ */
+const getThreadsWithNewImages = (threadMap, currentThreads) => {
+  const threadsWithNewImages = currentThreads
+      .filter((thread) => {
+        if (!threadMap.get(thread.no)) {
+          console.log(`New thread detected: ${thread.no}`);
+          return true;
         }
-      }
-      break;
-    }
+        return threadMap.get(thread.no).images < thread.images;
+      });
+  return threadsWithNewImages;
+};
 
-    for (const thread of currentThreads) {
-      this.threads.set(thread.no, {...this.threads.get(thread.no), images: thread.images});
+const get404edThreads = (threadMap, mostRecentThreadMap) => {
+  const threadsThatHave404ed = [];
+  for (const [threadID] of threadMap) {
+    if (!mostRecentThreadMap.has(threadID)) {
+      threadsThatHave404ed.push(threadID);
     }
-
-    return stream.filter((post) => post.filename).map((post) => ({...post, img_url: this.getImageUrl(post)}));
   }
-}
+  return threadsThatHave404ed;
+};
 
-module.exports = Board;
+
+/**
+ * Gets the differential in posts from map representation of an old thread & an updated thread
+ * @param {Map<string, Map>} updatedThread
+ * @param {Object[]} oldThread
+ * @return {Object[]} threads with new images
+ */
+const getNewPosts = (updatedThread, oldThread) => {
+  const newPosts = updatedThread.posts.filter((post) => {
+    if (!oldThread|| !oldThread.posts) {
+      return true;
+    }
+    return !oldThread.posts.has(post.no);
+  });
+  return newPosts;
+};
+
+const updateThreadMapAndGetNewImagePosts = async (threadMap, boardName) => {
+  let newPostsToCheck = [];
+
+  const allCurrentThreads = await getAllThreads(boardName);
+  const mostRecentThreadMap = turnPostsIntoMap(allCurrentThreads);
+
+  threadsThatHave404ed = get404edThreads(threadMap, mostRecentThreadMap);
+  for (const threadID of threadsThatHave404ed) {
+    threadMap.delete(threadID);
+  }
+
+  // For every thread with new images, we want to update the version we have in the hash map
+  // and we want to keep track of the new image posts for later processing
+  threadsWithNewImages = getThreadsWithNewImages(threadMap, allCurrentThreads);
+  for (const threadWithNewImages of threadsWithNewImages) {
+    const updatedThread = await getThreadByID(boardName, threadWithNewImages.no);
+    const oldThread = threadMap.get(threadWithNewImages.no);
+    const newPosts = getNewPosts(updatedThread, oldThread);
+
+    // Update the thread in memory to the most recently seen state
+    threadMap.set(
+        threadWithNewImages.no,
+        {...mostRecentThreadMap.get(threadWithNewImages.no), posts: turnPostsIntoMap(updatedThread.posts)},
+    );
+    console.log(`new post count ${newPosts.length} for thread ${threadWithNewImages.no}`);
+
+    newPostsToCheck = [...newPostsToCheck, ...newPosts];
+  }
+
+  for (const thread of allCurrentThreads) {
+    threadMap.set(thread.no, {...threadMap.get(thread.no), images: thread.images});
+  }
+  const newImagePosts = getImagePosts(newPostsToCheck, boardName);
+  return {newImagePosts};
+};
+
+module.exports = {
+  loadBoard,
+  updateThreadMapAndGetNewImagePosts,
+};
