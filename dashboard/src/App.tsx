@@ -37,8 +37,6 @@ export class Dashboard extends Component<{}, DashboardState> {
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <p>
-          </p>
-          <p>
             Last update: {this.state ? this.state.lastUpdate.toLocaleTimeString() : 'Have not updated yet'}
           </p>
           {
