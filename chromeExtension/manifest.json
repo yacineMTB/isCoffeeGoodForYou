@@ -1,0 +1,22 @@
+{ 
+  "manifest_version" : 2, 
+  "name" : "coffeeIsNotGoodForYou",
+  "version" : "0.1",
+  "permissions": [
+    "webNavigation"
+  ],
+  "background": {
+    "persistent": false,
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [ 
+    {
+      "matches": [ 
+        "*://boards.4chan.org/*",
+        "*://boards.4channel.org/*"
+      ],
+      "run_at": "document_end",
+      "js" : ["content.js"]
+    }
+  ]
+}

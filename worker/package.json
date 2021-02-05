@@ -1,0 +1,21 @@
+{
+  "name": "pornography_detection_worker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^2.7.0",
+    "got": "^11.8.0",
+    "ioredis": "^4.19.2",
+    "lodash": "^4.17.20",
+    "node-cron": "^2.0.3",
+    "nsfwjs": "^2.3.0",
+    "redis": "^3.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.19.0",
+    "eslint-config-google": "^0.14.0"
+  }
+}
