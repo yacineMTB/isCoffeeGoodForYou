@@ -35,6 +35,8 @@ This extension hides images that are deemed pornograhpic while browsing. I'm not
 
 ### Dashboard
 This is a simple web user interface written in react. It pretty much just reports the total counts of detected pornographic images.
+![dashboard](https://github.com/yacineMTB/isCoffeeGoodForYou/blob/master/images/2021-02-05-001237_1247x1075_scrot.png?raw=true)
+
 
 ## Running this on your machine
 I spent little time making this portable. Maybe I'll do it some other time. However, if you want to run this on your system:
