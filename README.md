@@ -35,3 +35,13 @@ This extension hides images that are deemed pornograhpic while browsing. I'm not
 
 ### Dashboard
 This is a simple web user interface written in react. It pretty much just reports the total counts of detected pornographic images.
+
+## Running this on your machine
+I spent little time making this portable. Maybe I'll do it some other time. However, if you want to run this on your system:
+
+- Install redis and run it. On my machine I was running redis through systemd.
+- `npm i` in the respective directories
+- Start up the worker (`node ./index.js`)
+- Start up the API (`npm run start`)
+- Start the dashboard (no point really tbh) (`npm run start`)
+- To use the chrome extension; check out this link https://developer.chrome.com/docs/extensions/mv2/getstarted/ 
