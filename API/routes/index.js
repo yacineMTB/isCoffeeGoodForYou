@@ -3,6 +3,6 @@ const router = express.Router();
 const {getPornographicRatingForHashHandler, getPornographicImageCountForBoardHandler} = require('../lib/handlers.js');
 
 router.get('/image/:md5', getPornographicRatingForHashHandler);
-router.get('/board/:board', getPornographicImageCountForBoardHandler);
+router.get('/board/:board/count', getPornographicImageCountForBoardHandler);
 
 module.exports = router;

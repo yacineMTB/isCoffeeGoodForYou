@@ -6,14 +6,15 @@ const {batchPromises} = require('./lib/util');
 
 const redisClient = new Redis();
 
-const BOARDS = ['fit'];
+const BOARDS = ['fit', 'g', 'sci', 's'];
 
 /**
  * Takes an array of images, classifies them, and saves the result to redis.
  * @param {Object[]} images a representation of a 4chan post with an image
+ * @param {Number} boardName the board name to increment pornographic image counts with
  * @param {Number} batchTarget degree of parallelization of classification
  */
-const batchProcessImages = async (images, batchTarget = 8) => {
+const batchProcessImages = async (images, boardName, batchTarget = 8) => {
   const imagesToClassify = [];
 
   // We don't want to waste cpu cycles of images we've already seen. We only want to classify images
@@ -43,10 +44,20 @@ const batchProcessImages = async (images, batchTarget = 8) => {
     };
     await redisClient.hset(imagePost.md5, fields);
     console.log(`processed ${imagePost.md5}`);
+    return fields;
   };
 
   const imagesToClassifyAsFunctionArguments = imagesToClassify.map((imagePost) => [imagePost]);
-  await batchPromises(imagesToClassifyAsFunctionArguments, imageClassificationOperation, batchTarget);
+  const result = await batchPromises(imagesToClassifyAsFunctionArguments, imageClassificationOperation, batchTarget);
+  const countOfPornographicImagesDetected = result.reduce((accumulator, classifiedPost) => {
+    // Using an arbitrary threshold
+    if (classifiedPost.porn > 0.5 || classifiedPost.hentai > 0.5 || classifiedPost.sexy > 0.5) {
+      return accumulator + 1;
+    }
+    return accumulator;
+  }, 0);
+  console.log(`Detected ${countOfPornographicImagesDetected} pornograhpic images`);
+  await redisClient.incrby(`${boardName}.count`, countOfPornographicImagesDetected);
 };
 
 (async () => {
@@ -59,7 +70,7 @@ const batchProcessImages = async (images, batchTarget = 8) => {
       const {newImagePosts} = await updateThreadMapAndGetNewImagePosts(threadMap, boardName);
       if (newImagePosts.length > 0) {
         console.log(`Detected update for /${boardName}/ with ${newImagePosts.length}`);
-        await batchProcessImages(newImagePosts);
+        await batchProcessImages(newImagePosts, boardName);
       }
     });
   }

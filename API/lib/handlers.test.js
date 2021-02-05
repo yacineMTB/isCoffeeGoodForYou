@@ -1,8 +1,11 @@
 const mockHgetall = jest.fn();
+const mockGet = jest.fn();
+
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => {
     return {
       hgetall: mockHgetall,
+      get: mockGet,
     };
   });
 });
@@ -13,6 +16,8 @@ describe('handlers', () => {
   beforeEach(() => {
     mockHgetall.mockReset();
     mockHgetall.mockImplementation(() => Promise.resolve('result-from-redis'));
+    mockGet.mockReset();
+    mockGet.mockImplementation(() => Promise.resolve(42));
   });
 
   describe('getPornograhpicRatingForHashHandler', () => {
@@ -22,12 +27,12 @@ describe('handlers', () => {
           md5: 'test-hash',
         },
       };
-      const mockSend = jest.fn();
+      const mockJson = jest.fn();
       const mockResponse = {
-        send: mockSend,
+        json: mockJson,
       };
       await handlers.getPornographicRatingForHashHandler(mockRequest, mockResponse);
-      expect(mockSend).toHaveBeenCalledWith('result-from-redis');
+      expect(mockJson).toHaveBeenCalledWith('result-from-redis');
       expect(mockHgetall).toHaveBeenCalledWith('test-hash');
     });
   });
@@ -40,13 +45,29 @@ describe('handlers', () => {
           board: 'test-board',
         },
       };
-      const mockSend = jest.fn();
+      const mockJson = jest.fn();
       const mockResponse = {
-        send: mockSend,
+        json: mockJson,
       };
       await handlers.getPornographicImageCountForBoardHandler(mockRequest, mockResponse);
-      expect(mockSend).toHaveBeenCalledWith('result-from-redis');
-      expect(mockHgetall).toHaveBeenCalledWith('test-board');
+      expect(mockJson).toHaveBeenCalledWith({'detected_image_count': 42});
+      expect(mockGet).toHaveBeenCalledWith('test-board.count');
+    });
+
+    it('should default to 0 if there is no image count saved in redis', async () => {
+    mockGet.mockImplementation(() => Promise.resolve(null));
+      const mockRequest = {
+        params: {
+          board: 'test-board',
+        },
+      };
+      const mockJson = jest.fn();
+      const mockResponse = {
+        json: mockJson,
+      };
+      await handlers.getPornographicImageCountForBoardHandler(mockRequest, mockResponse);
+      expect(mockJson).toHaveBeenCalledWith({'detected_image_count': 0});
+      expect(mockGet).toHaveBeenCalledWith('test-board.count');
     });
   });
 });

@@ -4,12 +4,15 @@ const redisClient = new Redis();
 
 const getPornographicRatingForHashHandler = async (req, res) => {
   const result = await redisClient.hgetall(req.params.md5);
-  res.send(result);
+  res.json(result);
 };
 
 const getPornographicImageCountForBoardHandler = async (req, res) => {
-  const result = await redisClient.hgetall(req.params.board);
-  res.send(result);
+  const result = await redisClient.get(`${req.params.board}.count`);
+  if (result) {
+    return res.json({detected_image_count: parseInt(result)});
+  }
+  res.json({detected_image_count: 0});
 };
 
 module.exports = {

@@ -1,7 +1,7 @@
 const URL = 'http://localhost:39591/';
 const spoilerImageUrl = 'https://s.4cdn.org/image/spoiler-a1.png';
 
-// This is a lazy solution to make sure we're not doing redundanttt requests
+// This is a lazy solution to make sure we're not doing redundant requests
 const lazyCache = new Set();
 
 const processOne = async ({ md5, imgElt }) => {
@@ -14,10 +14,10 @@ const processOne = async ({ md5, imgElt }) => {
   const sexyFloat = parseFloat(sexy);
   // const neutralFloat = parseFloat(neutral);
   // const drawingFloat = parseFloat(drawing);
-  const threeDimensionalPigDisgusting = sexyFloat + pornFloat > 0.35;
-  const twoDimensionalPigDisgusting = hentaiFloat > 0.40;
-  console.log(twoDimensionalPigDisgusting);
-  if (threeDimensionalPigDisgusting || twoDimensionalPigDisgusting) {
+  const threeDeePeeDee = sexyFloat + pornFloat > 0.35;
+  const twoDeePeeDee = hentaiFloat > 0.40;
+  console.log(twoDeePeeDee);
+  if (threeDeePeeDee || twoDeePeeDee) {
     imgElt.src = spoilerImageUrl;
   }
 };

@@ -4,7 +4,7 @@ const batchPromises = async (arrayOfArgumentsToApplyOperationOn, operation, degr
   for (const arguments of arrayOfArgumentsToApplyOperationOn) {
     if (batchOfPromises.length >= degreeOfParallelism) {
       batchOfResults = await Promise.all(batchOfPromises);
-      operationResults = [...operationResults];
+      operationResults = [...operationResults, ...batchOfResults];
       batchOfPromises = [];
     }
     const promise = operation(...arguments);
@@ -12,7 +12,7 @@ const batchPromises = async (arrayOfArgumentsToApplyOperationOn, operation, degr
   }
 
   batchOfResults = await Promise.all(batchOfPromises);
-  operationResults = [...operationResults];
+  operationResults = [...operationResults, ...batchOfResults];
 
   return operationResults;
 };
