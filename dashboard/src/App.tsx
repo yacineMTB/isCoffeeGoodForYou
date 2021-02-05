@@ -3,12 +3,12 @@ import logo from './logo.svg';
 import Board from './components/Board';
 import './App.css';
 
-type DashboardState = {
+type AppState = {
   lastUpdate: Date
   detectedBoardImages: {[key: string]: number}
 }
 
-type DashboardProps = {
+type AppProps = {
 
 }
 
@@ -17,11 +17,11 @@ const BOARDS = ['fit', 'g', 'sci'];
 const UPDATE_INTERVAL = 5000;
 
 /**
- * Root level component, represents the whole dashboard. Responsible for
+ * Root level component, represents the whole App. Responsible for
  * intially loading in the data
  */
-export class Dashboard extends Component<{}, DashboardState> {
-  constructor(props: DashboardProps) {
+export class App extends Component<{}, AppState> {
+  constructor(props: AppProps) {
     super(props);
     this.state = {detectedBoardImages: {}, lastUpdate: new Date()};
   }
@@ -68,5 +68,4 @@ export class Dashboard extends Component<{}, DashboardState> {
   }
 }
 
-// Change file name to reflect
-export default Dashboard;
+export default App;
