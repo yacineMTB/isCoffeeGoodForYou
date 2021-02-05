@@ -55,7 +55,7 @@ describe('handlers', () => {
     });
 
     it('should default to 0 if there is no image count saved in redis', async () => {
-    mockGet.mockImplementation(() => Promise.resolve(null));
+      mockGet.mockImplementation(() => Promise.resolve(null));
       const mockRequest = {
         params: {
           board: 'test-board',
