@@ -13,7 +13,7 @@ type DashboardProps = {
 }
 
 const BASE_API_URL = 'http://localhost:8080';
-const BOARDS = ['fit', 'g', 'sci', 's'];
+const BOARDS = ['fit', 'g', 'sci'];
 const UPDATE_INTERVAL = 5000;
 
 /**
